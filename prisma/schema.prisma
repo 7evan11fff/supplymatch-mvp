@@ -1,0 +1,122 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  BUSINESS
+  ADMIN
+}
+
+enum SupplierSource {
+  MANUAL
+  SCRAPED
+  AI_DISCOVERED
+}
+
+enum MatchStatus {
+  RECOMMENDED
+  BOOKED
+  DISMISSED
+}
+
+enum BookingStatus {
+  PENDING_REVIEW
+  APPROVED
+  CONNECTED
+  COMPLETED
+  CANCELLED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  role         UserRole @default(BUSINESS)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  business     Business?
+}
+
+model Business {
+  id               String           @id @default(cuid())
+  userId           String           @unique
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name             String
+  industry         String
+  location         String
+  description      String           @db.Text
+  operatingDetails Json?
+  profileComplete  Boolean          @default(false)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  items            BusinessItem[]
+  matches          SupplierMatch[]
+  bookings         BookingRequest[]
+}
+
+model BusinessItem {
+  id                String   @id @default(cuid())
+  businessId        String
+  business          Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  name              String
+  category          String
+  description       String?  @db.Text
+  estimatedQuantity String?
+  purchaseFrequency String?
+  specifications    String?  @db.Text
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model Supplier {
+  id          String         @id @default(cuid())
+  name        String
+  industry    String?
+  location    String?
+  website     String?
+  contactInfo String?        @db.Text
+  description String?        @db.Text
+  categories  Json?
+  source      SupplierSource @default(MANUAL)
+  verified    Boolean        @default(false)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  matches     SupplierMatch[]
+  bookings    BookingRequest[]
+}
+
+model SupplierMatch {
+  id          String        @id @default(cuid())
+  businessId  String
+  business    Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  supplierId  String
+  supplier    Supplier      @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  matchScore  Float
+  aiReasoning String?       @db.Text
+  aiSummary   String?       @db.Text
+  status      MatchStatus   @default(RECOMMENDED)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  booking     BookingRequest?
+}
+
+model BookingRequest {
+  id              String        @id @default(cuid())
+  businessId      String
+  business        Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  supplierId      String
+  supplier        Supplier      @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  matchId         String        @unique
+  match           SupplierMatch @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  status          BookingStatus @default(PENDING_REVIEW)
+  adminNotes      String?       @db.Text
+  businessMessage String?       @db.Text
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
