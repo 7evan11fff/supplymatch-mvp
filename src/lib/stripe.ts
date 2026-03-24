@@ -1,6 +1,16 @@
 import Stripe from "stripe";
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+let _stripe: Stripe | null = null;
+
+export function getStripe(): Stripe {
+  if (!_stripe) {
+    _stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+  }
+  return _stripe;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const stripe = new Proxy({} as Stripe, { get: (_, p) => (getStripe() as any)[p] });
 
 const PLATFORM_FEE_RATE = 0.01;
 
