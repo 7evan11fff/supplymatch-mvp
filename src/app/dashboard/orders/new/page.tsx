@@ -18,13 +18,6 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { ArrowLeft, Loader2, Sparkles } from "lucide-react";
 
 interface Booking {
@@ -224,22 +217,21 @@ export default function NewQuotePage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
-            <Label htmlFor="booking">Booking</Label>
-            <Select
+            <Label htmlFor="booking">Supplier</Label>
+            <select
+              id="booking"
               value={bookingId}
-              onValueChange={(v) => setBookingId(v ?? "")}
+              onChange={(e) => setBookingId(e.target.value)}
+              className="flex h-9 w-full max-w-md rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              required
             >
-              <SelectTrigger id="booking" className="w-full max-w-md">
-                <SelectValue placeholder="Select supplier / booking" />
-              </SelectTrigger>
-              <SelectContent>
-                {connected.map((b) => (
-                  <SelectItem key={b.id} value={b.id}>
-                    {b.supplier.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <option value="">Select a supplier</option>
+              {connected.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.supplier.name}
+                </option>
+              ))}
+            </select>
           </CardContent>
         </Card>
 
