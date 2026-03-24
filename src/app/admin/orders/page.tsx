@@ -52,7 +52,7 @@ const statusBadge: Record<string, "default" | "secondary" | "destructive" | "out
 };
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString(undefined, {
+  return new Date(iso).toLocaleString(undefined, {
     dateStyle: "medium",
     timeStyle: "short",
   });
