@@ -3,6 +3,8 @@ import { prisma } from "@/lib/db";
 import { requireBusiness } from "@/lib/session";
 import { runFullAnalysis } from "@/lib/matching";
 
+export const maxDuration = 120;
+
 export async function POST() {
   try {
     const session = await requireBusiness();

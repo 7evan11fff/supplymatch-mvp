@@ -1,9 +1,51 @@
 import { prisma } from "./db";
-import { analyzeBusinessNeeds, scoreSupplierMatch } from "./openai";
+import { analyzeBusinessNeeds, batchScoreSuppliers } from "./openai";
 import { discoverSuppliers } from "./scraper";
 
 const MATCH_THRESHOLD = 40;
 const GAP_THRESHOLD = 50;
+const BATCH_SIZE = 25;
+
+async function scoreSupplierBatch(
+  summary: string,
+  items: Array<{ name: string; category: string; specifications: string | null }>,
+  suppliers: Array<{
+    id: string;
+    name: string;
+    industry: string | null;
+    description: string | null;
+    categories: unknown;
+    location: string | null;
+  }>
+) {
+  const allScored: Array<{
+    supplierId: string;
+    score: number;
+    reasoning: string;
+    strengths: string[];
+    gaps: string[];
+  }> = [];
+
+  for (let i = 0; i < suppliers.length; i += BATCH_SIZE) {
+    const batch = suppliers.slice(i, i + BATCH_SIZE);
+    const scores = await batchScoreSuppliers(summary, items, batch);
+
+    for (const s of scores) {
+      const supplier = batch[s.index];
+      if (supplier && s.score >= MATCH_THRESHOLD) {
+        allScored.push({
+          supplierId: supplier.id,
+          score: s.score,
+          reasoning: s.reasoning,
+          strengths: s.strengths || [],
+          gaps: s.gaps || [],
+        });
+      }
+    }
+  }
+
+  return allScored;
+}
 
 export async function runFullAnalysis(businessId: string) {
   const business = await prisma.business.findUnique({
@@ -30,42 +72,24 @@ export async function runFullAnalysis(businessId: string) {
   });
 
   const suppliers = await prisma.supplier.findMany({ take: 50 });
+  const itemsForScoring = business.items.map((i) => ({
+    name: i.name,
+    category: i.category,
+    specifications: i.specifications,
+  }));
 
-  const scoredMatches: Array<{
-    supplierId: string;
-    score: number;
-    reasoning: string;
-    strengths: string[];
-    gaps: string[];
-  }> = [];
-
-  for (const supplier of suppliers) {
-    const result = await scoreSupplierMatch(
-      analysis.summary,
-      business.items.map((i) => ({
-        name: i.name,
-        category: i.category,
-        specifications: i.specifications,
-      })),
-      {
-        name: supplier.name,
-        industry: supplier.industry,
-        description: supplier.description,
-        categories: supplier.categories,
-        location: supplier.location,
-      }
-    );
-
-    if (result.score >= MATCH_THRESHOLD) {
-      scoredMatches.push({
-        supplierId: supplier.id,
-        score: result.score,
-        reasoning: result.reasoning,
-        strengths: result.strengths || [],
-        gaps: result.gaps || [],
-      });
-    }
-  }
+  let scoredMatches = await scoreSupplierBatch(
+    analysis.summary,
+    itemsForScoring,
+    suppliers.map((s) => ({
+      id: s.id,
+      name: s.name,
+      industry: s.industry,
+      description: s.description,
+      categories: s.categories,
+      location: s.location,
+    }))
+  );
 
   const bestScore = scoredMatches.length > 0
     ? Math.max(...scoredMatches.map((m) => m.score))
@@ -85,32 +109,20 @@ export async function runFullAnalysis(businessId: string) {
       take: 20,
     });
 
-    for (const supplier of newSuppliers) {
-      const result = await scoreSupplierMatch(
+    if (newSuppliers.length > 0) {
+      const newScores = await scoreSupplierBatch(
         analysis.summary,
-        business.items.map((i) => ({
-          name: i.name,
-          category: i.category,
-          specifications: i.specifications,
-        })),
-        {
-          name: supplier.name,
-          industry: supplier.industry,
-          description: supplier.description,
-          categories: supplier.categories,
-          location: supplier.location,
-        }
+        itemsForScoring,
+        newSuppliers.map((s) => ({
+          id: s.id,
+          name: s.name,
+          industry: s.industry,
+          description: s.description,
+          categories: s.categories,
+          location: s.location,
+        }))
       );
-
-      if (result.score >= MATCH_THRESHOLD) {
-        scoredMatches.push({
-          supplierId: supplier.id,
-          score: result.score,
-          reasoning: result.reasoning,
-          strengths: result.strengths || [],
-          gaps: result.gaps || [],
-        });
-      }
+      scoredMatches = [...scoredMatches, ...newScores];
     }
   }
 
