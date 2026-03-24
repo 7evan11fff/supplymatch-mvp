@@ -9,6 +9,7 @@ import {
   LayoutDashboard,
   ClipboardList,
   Truck,
+  Users,
   LogOut,
   Shield,
 } from "lucide-react";
@@ -17,6 +18,7 @@ const navItems = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard },
   { href: "/admin/bookings", label: "Booking Requests", icon: ClipboardList },
   { href: "/admin/suppliers", label: "Suppliers", icon: Truck },
+  { href: "/admin/clients", label: "Clients", icon: Users },
 ];
 
 export function AdminNav() {
