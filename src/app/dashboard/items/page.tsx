@@ -257,7 +257,7 @@ export default function ItemsPage() {
 
       {/* Bulk import dialog */}
       <Dialog open={bulkDialogOpen} onOpenChange={setBulkDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Bulk Import Items</DialogTitle>
           </DialogHeader>
