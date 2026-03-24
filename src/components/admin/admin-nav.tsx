@@ -14,6 +14,7 @@ import {
   Package,
   LogOut,
   Shield,
+  Target,
 } from "lucide-react";
 
 const navItems = [
@@ -23,6 +24,7 @@ const navItems = [
   { href: "/admin/orders", label: "Orders", icon: Package },
   { href: "/admin/suppliers", label: "Suppliers", icon: Truck },
   { href: "/admin/clients", label: "Clients", icon: Users },
+  { href: "/admin/leads", label: "B2B Leads", icon: Target },
 ];
 
 export function AdminNav() {

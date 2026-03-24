@@ -61,6 +61,20 @@ enum RecurringFrequency {
   QUARTERLY
 }
 
+enum LeadStatus {
+  PROSPECT
+  CONTACTED
+  NEGOTIATING
+  CONVERTED
+  LOST
+}
+
+enum LeadPriority {
+  HIGH
+  MEDIUM
+  LOW
+}
+
 model User {
   id           String   @id @default(cuid())
   email        String   @unique
@@ -225,6 +239,33 @@ model OrderLineItem {
   unit        String?
   unitPrice   Float
   lineTotal   Float
+}
+
+model Lead {
+  id              String       @id @default(cuid())
+  businessName    String
+  website         String?
+  industry        String
+  isFranchise     Boolean      @default(false)
+  locationCount   Int          @default(1)
+  address         String?
+  city            String       @default("Austin")
+  state           String       @default("TX")
+  zip             String?
+  generalPhone    String?
+  generalEmail    String?
+  managerName     String?
+  managerEmail    String?
+  managerPhone    String?
+  ceoName         String?
+  ceoEmail        String?
+  ceoPhone        String?
+  additionalContacts String?   @db.Text
+  notes           String?      @db.Text
+  status          LeadStatus   @default(PROSPECT)
+  priority        LeadPriority @default(MEDIUM)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 }
 
 model RecurringOrder {

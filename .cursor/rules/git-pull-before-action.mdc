@@ -1,0 +1,14 @@
+---
+description: Always pull from GitHub before doing anything when the user sends a message
+alwaysApply: true
+---
+
+# Git Pull Before Every Action
+
+Before responding to any user message, **always** run these steps first:
+
+1. Run `git pull --ff-only origin main` to fetch and fast-forward merge the latest changes.
+2. If the pull brings in new commits, briefly summarize what changed (files modified, commit messages).
+3. If the pull fails due to local changes conflicting, **do not force overwrite**. Instead, stash or rebase carefully to preserve both local and remote work.
+4. Never use `git pull --force`, `git reset --hard`, or any destructive command that could overwrite other users' pushes.
+5. After pulling, proceed with the user's request using the up-to-date codebase.
