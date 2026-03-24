@@ -10,6 +10,9 @@ import {
   Building2,
   ShoppingCart,
   Sparkles,
+  ClipboardList,
+  FileText,
+  Repeat,
   LogOut,
 } from "lucide-react";
 
@@ -17,11 +20,10 @@ const navItems = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
   { href: "/dashboard/profile", label: "Business Profile", icon: Building2 },
   { href: "/dashboard/items", label: "Purchased Items", icon: ShoppingCart },
-  {
-    href: "/dashboard/recommendations",
-    label: "Recommendations",
-    icon: Sparkles,
-  },
+  { href: "/dashboard/recommendations", label: "Recommendations", icon: Sparkles },
+  { href: "/dashboard/orders", label: "Orders", icon: ClipboardList },
+  { href: "/dashboard/quotes", label: "Quotes", icon: FileText },
+  { href: "/dashboard/recurring", label: "Recurring Orders", icon: Repeat },
 ];
 
 export function DashboardNav() {

@@ -10,6 +10,8 @@ import {
   ClipboardList,
   Truck,
   Users,
+  FileText,
+  Package,
   LogOut,
   Shield,
 } from "lucide-react";
@@ -17,6 +19,8 @@ import {
 const navItems = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard },
   { href: "/admin/bookings", label: "Booking Requests", icon: ClipboardList },
+  { href: "/admin/quotes", label: "Quotes", icon: FileText },
+  { href: "/admin/orders", label: "Orders", icon: Package },
   { href: "/admin/suppliers", label: "Suppliers", icon: Truck },
   { href: "/admin/clients", label: "Clients", icon: Users },
 ];

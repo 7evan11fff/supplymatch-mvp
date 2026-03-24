@@ -32,6 +32,35 @@ enum BookingStatus {
   CANCELLED
 }
 
+enum QuoteStatus {
+  REQUESTED
+  PRICED
+  ACCEPTED
+  EXPIRED
+}
+
+enum OrderStatus {
+  PENDING_PAYMENT
+  PAID
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAUSED
+  CANCELLED
+}
+
+enum RecurringFrequency {
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+  QUARTERLY
+}
+
 model User {
   id           String   @id @default(cuid())
   email        String   @unique
@@ -53,11 +82,15 @@ model Business {
   description      String           @db.Text
   operatingDetails Json?
   profileComplete  Boolean          @default(false)
+  stripeCustomerId String?
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
   items            BusinessItem[]
   matches          SupplierMatch[]
   bookings         BookingRequest[]
+  quotes           Quote[]
+  orders           Order[]
+  recurringOrders  RecurringOrder[]
 }
 
 model BusinessItem {
@@ -75,20 +108,23 @@ model BusinessItem {
 }
 
 model Supplier {
-  id          String         @id @default(cuid())
-  name        String
-  industry    String?
-  location    String?
-  website     String?
-  contactInfo String?        @db.Text
-  description String?        @db.Text
-  categories  Json?
-  source      SupplierSource @default(MANUAL)
-  verified    Boolean        @default(false)
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  matches     SupplierMatch[]
-  bookings    BookingRequest[]
+  id              String           @id @default(cuid())
+  name            String
+  industry        String?
+  location        String?
+  website         String?
+  contactInfo     String?          @db.Text
+  description     String?          @db.Text
+  categories      Json?
+  source          SupplierSource   @default(MANUAL)
+  verified        Boolean          @default(false)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  matches         SupplierMatch[]
+  bookings        BookingRequest[]
+  quotes          Quote[]
+  orders          Order[]
+  recurringOrders RecurringOrder[]
 }
 
 model SupplierMatch {
@@ -119,4 +155,97 @@ model BookingRequest {
   businessMessage String?       @db.Text
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
+  quotes          Quote[]
+}
+
+model Quote {
+  id            String          @id @default(cuid())
+  businessId    String
+  business      Business        @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  supplierId    String
+  supplier      Supplier        @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  bookingId     String
+  booking       BookingRequest  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  status        QuoteStatus     @default(REQUESTED)
+  subtotal      Float?
+  platformFee   Float?
+  total         Float?
+  businessNotes String?         @db.Text
+  adminNotes    String?         @db.Text
+  expiresAt     DateTime?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  lineItems     QuoteLineItem[]
+  orders        Order[]
+  recurringOrder RecurringOrder?
+}
+
+model QuoteLineItem {
+  id          String @id @default(cuid())
+  quoteId     String
+  quote       Quote  @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  name        String
+  description String? @db.Text
+  quantity    Float
+  unit        String?
+  unitPrice   Float?
+  lineTotal   Float?
+}
+
+model Order {
+  id                      String      @id @default(cuid())
+  businessId              String
+  business                Business    @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  supplierId              String
+  supplier                Supplier    @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  quoteId                 String
+  quote                   Quote       @relation(fields: [quoteId], references: [id])
+  status                  OrderStatus @default(PENDING_PAYMENT)
+  subtotal                Float
+  platformFee             Float
+  total                   Float
+  stripePaymentIntentId   String?
+  stripeCheckoutSessionId String?
+  recurringOrderId        String?
+  recurringOrder          RecurringOrder? @relation(fields: [recurringOrderId], references: [id])
+  cycleNumber             Int?
+  adminNotes              String?     @db.Text
+  createdAt               DateTime    @default(now())
+  updatedAt               DateTime    @updatedAt
+  lineItems               OrderLineItem[]
+}
+
+model OrderLineItem {
+  id          String @id @default(cuid())
+  orderId     String
+  order       Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  name        String
+  description String? @db.Text
+  quantity    Float
+  unit        String?
+  unitPrice   Float
+  lineTotal   Float
+}
+
+model RecurringOrder {
+  id                   String              @id @default(cuid())
+  businessId           String
+  business             Business            @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  supplierId           String
+  supplier             Supplier            @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  quoteId              String              @unique
+  quote                Quote               @relation(fields: [quoteId], references: [id])
+  status               SubscriptionStatus  @default(ACTIVE)
+  frequency            RecurringFrequency
+  nextOrderDate        DateTime
+  stripeCustomerId     String?
+  stripePaymentMethodId String?
+  itemsSnapshot        Json
+  subtotal             Float
+  platformFee          Float
+  total                Float
+  skipNext             Boolean             @default(false)
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  orders               Order[]
 }
