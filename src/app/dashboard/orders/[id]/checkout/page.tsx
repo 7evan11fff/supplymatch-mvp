@@ -298,7 +298,7 @@ export default function CheckoutPage() {
                   <span className="tabular-nums">{formatMoney(order.subtotal)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Platform fee (1%)</span>
+                  <span className="text-muted-foreground">Platform fee (2%)</span>
                   <span className="tabular-nums">{formatMoney(order.platformFee)}</span>
                 </div>
                 <Separator />
