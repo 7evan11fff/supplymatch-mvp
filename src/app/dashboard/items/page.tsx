@@ -18,9 +18,10 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Package, Sparkles, Loader2 } from "lucide-react";
+import { Plus, Trash2, Package, Sparkles, Loader2, Pencil } from "lucide-react";
 
 interface Item {
   id: string;
@@ -61,9 +62,12 @@ export default function ItemsPage() {
   const [saving, setSaving] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Item | null>(null);
   const [bulkText, setBulkText] = useState("");
   const [bulkLoading, setBulkLoading] = useState(false);
   const [form, setForm] = useState(emptyForm);
+  const [editingItem, setEditingItem] = useState<Item | null>(null);
 
   const fetchItems = useCallback(() => {
     fetch("/api/items")
@@ -78,25 +82,47 @@ export default function ItemsPage() {
     fetchItems();
   }, [fetchItems]);
 
-  async function handleAdd(e: React.FormEvent) {
+  function openAdd() {
+    setEditingItem(null);
+    setForm(emptyForm);
+    setDialogOpen(true);
+  }
+
+  function openEdit(item: Item) {
+    setEditingItem(item);
+    setForm({
+      name: item.name,
+      category: item.category,
+      description: item.description ?? "",
+      estimatedQuantity: item.estimatedQuantity ?? "",
+      purchaseFrequency: item.purchaseFrequency ?? "",
+      specifications: item.specifications ?? "",
+    });
+    setDialogOpen(true);
+  }
+
+  async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
 
     try {
+      const method = editingItem ? "PUT" : "POST";
+      const body = editingItem ? { id: editingItem.id, ...form } : form;
       const res = await fetch("/api/items", {
-        method: "POST",
+        method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(body),
       });
 
       if (!res.ok) throw new Error();
 
-      toast.success("Item added");
+      toast.success(editingItem ? "Item updated" : "Item added");
       setForm(emptyForm);
+      setEditingItem(null);
       setDialogOpen(false);
       fetchItems();
     } catch {
-      toast.error("Failed to add item");
+      toast.error(editingItem ? "Failed to update item" : "Failed to add item");
     } finally {
       setSaving(false);
     }
@@ -131,20 +157,29 @@ export default function ItemsPage() {
     }
   }
 
-  async function handleDelete(id: string) {
+  function confirmDelete(item: Item) {
+    setDeleteTarget(item);
+    setDeleteDialogOpen(true);
+  }
+
+  async function handleDelete() {
+    if (!deleteTarget) return;
     try {
-      const res = await fetch(`/api/items?id=${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/items?id=${deleteTarget.id}`, { method: "DELETE" });
       if (!res.ok) throw new Error();
       toast.success("Item removed");
-      setItems((prev) => prev.filter((i) => i.id !== id));
+      setItems((prev) => prev.filter((i) => i.id !== deleteTarget.id));
     } catch {
       toast.error("Failed to remove item");
+    } finally {
+      setDeleteDialogOpen(false);
+      setDeleteTarget(null);
     }
   }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold">Purchased Items</h1>
           <p className="text-muted-foreground mt-1">
@@ -157,20 +192,20 @@ export default function ItemsPage() {
             <Sparkles className="h-4 w-4 mr-2" />
             Bulk Import
           </Button>
-          <Button onClick={() => setDialogOpen(true)}>
+          <Button onClick={openAdd}>
             <Plus className="h-4 w-4 mr-2" />
             Add Item
           </Button>
         </div>
       </div>
 
-      {/* Single item dialog */}
+      {/* Add / Edit dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add Purchased Item</DialogTitle>
+            <DialogTitle>{editingItem ? "Edit Item" : "Add Purchased Item"}</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleAdd} className="space-y-4">
+          <form onSubmit={handleSave} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="item-name">Item Name</Label>
               <Input
@@ -249,7 +284,7 @@ export default function ItemsPage() {
               />
             </div>
             <Button type="submit" className="w-full" disabled={saving}>
-              {saving ? "Adding..." : "Add Item"}
+              {saving ? "Saving..." : editingItem ? "Update Item" : "Add Item"}
             </Button>
           </form>
         </DialogContent>
@@ -302,8 +337,30 @@ export default function ItemsPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Delete confirmation dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Item</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete &quot;{deleteTarget?.name}&quot;? This action
+              cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-3 justify-end">
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDelete}>
+              Delete
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {loading ? (
-        <div className="text-center py-12 text-muted-foreground">
+        <div className="flex items-center justify-center gap-2 py-12 text-muted-foreground">
+          <Loader2 className="h-5 w-5 animate-spin" />
           Loading items...
         </div>
       ) : items.length === 0 ? (
@@ -319,7 +376,7 @@ export default function ItemsPage() {
                 <Sparkles className="h-4 w-4 mr-2" />
                 Bulk Import
               </Button>
-              <Button onClick={() => setDialogOpen(true)}>
+              <Button onClick={openAdd}>
                 <Plus className="h-4 w-4 mr-2" />
                 Add Your First Item
               </Button>
@@ -344,14 +401,26 @@ export default function ItemsPage() {
                       )}
                     </CardDescription>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleDelete(item.id)}
-                    className="text-muted-foreground hover:text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => openEdit(item)}
+                      className="text-muted-foreground hover:text-foreground"
+                      aria-label={`Edit ${item.name}`}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => confirmDelete(item)}
+                      className="text-muted-foreground hover:text-destructive"
+                      aria-label={`Delete ${item.name}`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               {(item.description || item.specifications) && (

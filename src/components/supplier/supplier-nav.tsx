@@ -14,27 +14,19 @@ import {
 import { NotificationBell } from "@/components/ui/notification-bell";
 import {
   LayoutDashboard,
-  ClipboardList,
-  Truck,
-  Users,
+  Building2,
   FileText,
   Package,
   LogOut,
-  Shield,
-  Target,
-  BarChart3,
+  Truck,
   Menu,
 } from "lucide-react";
 
 const navItems = [
-  { href: "/admin", label: "Overview", icon: LayoutDashboard },
-  { href: "/admin/bookings", label: "Booking Requests", icon: ClipboardList },
-  { href: "/admin/quotes", label: "Quotes", icon: FileText },
-  { href: "/admin/orders", label: "Orders", icon: Package },
-  { href: "/admin/suppliers", label: "Suppliers", icon: Truck },
-  { href: "/admin/clients", label: "Clients", icon: Users },
-  { href: "/admin/leads", label: "B2B Leads", icon: Target },
-  { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
+  { href: "/supplier", label: "Overview", icon: LayoutDashboard },
+  { href: "/supplier/profile", label: "Company Profile", icon: Building2 },
+  { href: "/supplier/quotes", label: "Quote Requests", icon: FileText },
+  { href: "/supplier/orders", label: "Orders", icon: Package },
 ];
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
@@ -46,7 +38,7 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
         const Icon = item.icon;
         const active =
           pathname === item.href ||
-          (item.href !== "/admin" && pathname.startsWith(item.href));
+          (item.href !== "/supplier" && pathname.startsWith(item.href));
         return (
           <Link
             key={item.href}
@@ -68,21 +60,20 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-function AdminBadge() {
+function SupplierBadge() {
   return (
     <div className="flex items-center gap-1 mt-1">
-      <Shield className="h-3 w-3 text-muted-foreground" />
-      <span className="text-xs text-muted-foreground">Admin Panel</span>
+      <Truck className="h-3 w-3 text-muted-foreground" />
+      <span className="text-xs text-muted-foreground">Supplier Portal</span>
     </div>
   );
 }
 
-export function AdminNav() {
+export function SupplierNav() {
   const [open, setOpen] = useState(false);
 
   return (
     <>
-      {/* Mobile header */}
       <div className="sticky top-0 z-40 flex items-center gap-3 border-b bg-card px-4 py-3 md:hidden">
         <Button
           variant="ghost"
@@ -93,22 +84,21 @@ export function AdminNav() {
           <Menu className="h-5 w-5" />
         </Button>
         <div className="flex-1">
-          <Link href="/admin" className="text-lg font-bold tracking-tight">
+          <Link href="/supplier" className="text-lg font-bold tracking-tight">
             SupplyMatch
           </Link>
-          <AdminBadge />
+          <SupplierBadge />
         </div>
         <NotificationBell />
       </div>
 
-      {/* Mobile drawer */}
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent side="left" className="w-64 p-4 flex flex-col">
           <div className="mb-6">
             <SheetTitle className="text-xl font-bold tracking-tight">
               SupplyMatch
             </SheetTitle>
-            <AdminBadge />
+            <SupplierBadge />
           </div>
           <NavLinks onNavigate={() => setOpen(false)} />
           <Button
@@ -122,16 +112,15 @@ export function AdminNav() {
         </SheetContent>
       </Sheet>
 
-      {/* Desktop sidebar */}
       <aside className="hidden md:flex w-64 border-r bg-card min-h-screen p-4 flex-col">
         <div className="mb-8">
           <div className="flex items-center justify-between">
-            <Link href="/admin" className="text-xl font-bold tracking-tight">
+            <Link href="/supplier" className="text-xl font-bold tracking-tight">
               SupplyMatch
             </Link>
             <NotificationBell />
           </div>
-          <AdminBadge />
+          <SupplierBadge />
         </div>
         <NavLinks />
         <Button

@@ -24,6 +24,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ArrowLeft, CreditCard, Loader2, RefreshCw } from "lucide-react";
+import { MessageThread } from "@/components/ui/message-thread";
 
 interface OrderDetail {
   id: string;
@@ -77,6 +78,7 @@ export default function OrderDetailPage() {
 
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [paymentHandled, setPaymentHandled] = useState(false);
@@ -84,6 +86,7 @@ export default function OrderDetailPage() {
   const fetchOrder = useCallback(() => {
     if (!id) return;
     setLoading(true);
+    setFetchError(null);
     fetch(`/api/orders/${id}`)
       .then(async (r) => {
         if (r.status === 404) {
@@ -92,13 +95,17 @@ export default function OrderDetailPage() {
           return;
         }
         const data = await r.json();
-        if (!r.ok) throw new Error(data.error);
+        if (!r.ok) {
+          setFetchError(data.error || "Failed to load order");
+          setOrder(null);
+          return;
+        }
         setNotFound(false);
         setOrder(data);
       })
       .catch(() => {
         setOrder(null);
-        setNotFound(true);
+        setFetchError("Failed to connect. Please try again.");
       })
       .finally(() => setLoading(false));
   }, [id]);
@@ -164,6 +171,29 @@ export default function OrderDetailPage() {
     return (
       <div className="max-w-4xl mx-auto py-12 text-center text-muted-foreground">
         Loading order...
+      </div>
+    );
+  }
+
+  if (fetchError) {
+    return (
+      <div className="max-w-4xl mx-auto space-y-4">
+        <Link
+          href="/dashboard/orders"
+          className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "-ml-2 inline-flex items-center")}
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to orders
+        </Link>
+        <Card>
+          <CardHeader>
+            <CardTitle>Error loading order</CardTitle>
+            <CardDescription>{fetchError}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button variant="outline" onClick={fetchOrder}>Try Again</Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -335,6 +365,8 @@ export default function OrderDetailPage() {
           )}
         </CardContent>
       </Card>
+
+      <MessageThread orderId={order.id} />
     </div>
   );
 }

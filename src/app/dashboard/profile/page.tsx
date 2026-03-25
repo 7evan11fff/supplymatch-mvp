@@ -34,6 +34,7 @@ export default function ProfilePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
+  const [isNewProfile, setIsNewProfile] = useState(true);
   const [form, setForm] = useState({
     name: "",
     industry: "",
@@ -51,6 +52,7 @@ export default function ProfilePage() {
       .then((r) => r.json())
       .then((data) => {
         if (data && data.name) {
+          setIsNewProfile(false);
           setForm({
             name: data.name,
             industry: data.industry,
@@ -81,7 +83,9 @@ export default function ProfilePage() {
       if (!res.ok) throw new Error("Failed to save");
 
       toast.success("Business profile saved!");
-      router.push("/dashboard/items");
+      if (isNewProfile) {
+        router.push("/dashboard/items");
+      }
       router.refresh();
     } catch {
       toast.error("Failed to save profile");
@@ -235,7 +239,7 @@ export default function ProfilePage() {
 
         <div className="flex justify-end">
           <Button type="submit" disabled={loading} size="lg">
-            {loading ? "Saving..." : "Save & Continue to Items"}
+            {loading ? "Saving..." : isNewProfile ? "Save & Continue to Items" : "Save Profile"}
           </Button>
         </div>
       </form>

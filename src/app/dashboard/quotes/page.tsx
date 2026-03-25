@@ -28,6 +28,7 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { FileText, Loader2, CheckCircle2 } from "lucide-react";
+import { MessageThread } from "@/components/ui/message-thread";
 
 interface Quote {
   id: string;
@@ -494,6 +495,9 @@ export default function QuotesPage() {
                       </div>
                     </>
                   ) : null}
+
+                  <Separator />
+                  <MessageThread quoteId={quote.id} />
                 </CardContent>
               </Card>
             );

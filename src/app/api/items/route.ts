@@ -47,6 +47,41 @@ export async function POST(request: Request) {
   }
 }
 
+export async function PUT(request: Request) {
+  try {
+    const businessId = await getBusinessId();
+    const data = await request.json();
+
+    if (!data.id) {
+      return NextResponse.json({ error: "Item ID required" }, { status: 400 });
+    }
+
+    const item = await prisma.businessItem.findFirst({
+      where: { id: data.id, businessId },
+    });
+
+    if (!item) {
+      return NextResponse.json({ error: "Item not found" }, { status: 404 });
+    }
+
+    const updated = await prisma.businessItem.update({
+      where: { id: data.id },
+      data: {
+        name: data.name,
+        category: data.category,
+        description: data.description || null,
+        estimatedQuantity: data.estimatedQuantity || null,
+        purchaseFrequency: data.purchaseFrequency || null,
+        specifications: data.specifications || null,
+      },
+    });
+
+    return NextResponse.json(updated);
+  } catch {
+    return NextResponse.json({ error: "Failed to update item" }, { status: 500 });
+  }
+}
+
 export async function DELETE(request: Request) {
   try {
     const businessId = await getBusinessId();

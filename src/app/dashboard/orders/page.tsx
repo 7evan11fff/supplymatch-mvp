@@ -15,7 +15,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CreditCard, Loader2, Plus } from "lucide-react";
+import { CreditCard, Loader2, Plus, ExternalLink } from "lucide-react";
 
 interface Order {
   id: string;
@@ -164,9 +164,11 @@ export default function OrdersPage() {
                   <CardHeader className="pb-3">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div>
-                        <CardTitle className="text-lg">
-                          {order.supplier.name}
-                        </CardTitle>
+                        <Link href={`/dashboard/orders/${order.id}`} className="hover:underline">
+                          <CardTitle className="text-lg">
+                            {order.supplier.name}
+                          </CardTitle>
+                        </Link>
                         <CardDescription className="mt-1">
                           {new Date(order.createdAt).toLocaleDateString(
                             undefined,
@@ -176,9 +178,18 @@ export default function OrdersPage() {
                           )}
                         </CardDescription>
                       </div>
-                      <Badge variant={statusBadgeVariant(order.status)}>
-                        {order.status.replace(/_/g, " ")}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={statusBadgeVariant(order.status)}>
+                          {order.status.replace(/_/g, " ")}
+                        </Badge>
+                        <Link
+                          href={`/dashboard/orders/${order.id}`}
+                          className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "h-8 w-8")}
+                          aria-label="View order details"
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </Link>
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">

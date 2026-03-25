@@ -285,7 +285,7 @@ export default function LeadsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold">B2B Leads</h1>
           <p className="text-muted-foreground mt-1">
@@ -305,7 +305,7 @@ export default function LeadsPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
         {[
           { label: "Total", value: stats.total, color: "text-foreground" },
           { label: "Prospect", value: stats.prospect, color: "text-blue-600" },

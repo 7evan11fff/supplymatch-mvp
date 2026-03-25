@@ -17,6 +17,13 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
   CalendarClock,
   Loader2,
   Pause,
@@ -85,6 +92,7 @@ export default function RecurringOrdersPage() {
   const [actingId, setActingId] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
+  const [cancelTarget, setCancelTarget] = useState<string | null>(null);
 
   const fetchRecurring = useCallback(() => {
     setLoading(true);
@@ -144,6 +152,7 @@ export default function RecurringOrdersPage() {
 
   async function cancelRecurring(id: string) {
     setActingId(id);
+    setCancelTarget(null);
     try {
       const res = await fetch(`/api/recurring/${id}`, { method: "DELETE" });
       if (!res.ok) {
@@ -372,13 +381,9 @@ export default function RecurringOrdersPage() {
                                   variant="destructive"
                                   size="sm"
                                   disabled={busy}
-                                  onClick={() => cancelRecurring(r.id)}
+                                  onClick={() => setCancelTarget(r.id)}
                                 >
-                                  {busy ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                  ) : (
-                                    <Trash2 className="h-4 w-4" />
-                                  )}
+                                  <Trash2 className="h-4 w-4" />
                                   Cancel
                                 </Button>
                               </>
@@ -401,13 +406,9 @@ export default function RecurringOrdersPage() {
                                   variant="destructive"
                                   size="sm"
                                   disabled={busy}
-                                  onClick={() => cancelRecurring(r.id)}
+                                  onClick={() => setCancelTarget(r.id)}
                                 >
-                                  {busy ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                  ) : (
-                                    <Trash2 className="h-4 w-4" />
-                                  )}
+                                  <Trash2 className="h-4 w-4" />
                                   Cancel
                                 </Button>
                               </>
@@ -422,6 +423,25 @@ export default function RecurringOrdersPage() {
             </div>
           )}
       </div>
+
+      <Dialog open={!!cancelTarget} onOpenChange={(open) => !open && setCancelTarget(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Cancel Recurring Order</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to cancel this recurring order? No future orders will be created. This cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-3 justify-end">
+            <Button variant="outline" onClick={() => setCancelTarget(null)}>
+              Keep Active
+            </Button>
+            <Button variant="destructive" onClick={() => cancelTarget && cancelRecurring(cancelTarget)}>
+              Cancel Order
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

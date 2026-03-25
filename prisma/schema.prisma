@@ -10,6 +10,7 @@ datasource db {
 enum UserRole {
   BUSINESS
   ADMIN
+  SUPPLIER
 }
 
 enum SupplierSource {
@@ -76,14 +77,31 @@ enum LeadPriority {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  passwordHash String
-  name         String?
-  role         UserRole @default(BUSINESS)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  business     Business?
+  id            String         @id @default(cuid())
+  email         String         @unique
+  passwordHash  String
+  name          String?
+  role          UserRole       @default(BUSINESS)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  business      Business?
+  supplier      Supplier?      @relation("SupplierUser")
+  notifications Notification[]
+  sentMessages  Message[]
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  title     String
+  message   String   @db.Text
+  link      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, read])
 }
 
 model Business {
@@ -123,6 +141,8 @@ model BusinessItem {
 
 model Supplier {
   id              String           @id @default(cuid())
+  userId          String?          @unique
+  user            User?            @relation("SupplierUser", fields: [userId], references: [id], onDelete: SetNull)
   name            String
   industry        String?
   location        String?
@@ -189,9 +209,10 @@ model Quote {
   expiresAt     DateTime?
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
-  lineItems     QuoteLineItem[]
-  orders        Order[]
+  lineItems      QuoteLineItem[]
+  orders         Order[]
   recurringOrder RecurringOrder?
+  messages       Message[]
 }
 
 model QuoteLineItem {
@@ -227,6 +248,7 @@ model Order {
   createdAt               DateTime    @default(now())
   updatedAt               DateTime    @updatedAt
   lineItems               OrderLineItem[]
+  messages                Message[]
 }
 
 model OrderLineItem {
@@ -289,4 +311,19 @@ model RecurringOrder {
   createdAt            DateTime            @default(now())
   updatedAt            DateTime            @updatedAt
   orders               Order[]
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  senderId  String
+  sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  quoteId   String?
+  quote     Quote?   @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  orderId   String?
+  order     Order?   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  body      String   @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([quoteId])
+  @@index([orderId])
 }

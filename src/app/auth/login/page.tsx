@@ -40,7 +40,15 @@ export default function LoginPage() {
       return;
     }
 
-    router.push("/dashboard");
+    const session = await fetch("/api/auth/session").then((r) => r.json());
+    const role = session?.user?.role;
+    if (role === "ADMIN") {
+      router.push("/admin");
+    } else if (role === "SUPPLIER") {
+      router.push("/supplier");
+    } else {
+      router.push("/dashboard");
+    }
     router.refresh();
   }
 
@@ -70,7 +78,15 @@ export default function LoginPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Password</Label>
+                <Link
+                  href="/auth/forgot-password"
+                  className="text-xs text-muted-foreground hover:text-primary underline-offset-4 hover:underline"
+                >
+                  Forgot password?
+                </Link>
+              </div>
               <Input
                 id="password"
                 type="password"
