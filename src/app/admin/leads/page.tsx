@@ -208,6 +208,7 @@ export default function LeadsPage() {
       notes: lead.notes ?? "",
       status: lead.status,
       priority: lead.priority,
+      locations: lead.locations ?? [],
     });
     setDialogOpen(true);
   }
