@@ -43,7 +43,7 @@ export async function GET(request: Request) {
       );
     }
 
-    if (!(await verifyAccess(session.user as { id: string; role: string }, quoteId, orderId))) {
+    if (!(await verifyAccess({ user: session.user as { id: string; role: string } }, quoteId, orderId))) {
       return NextResponse.json({ error: "Access denied" }, { status: 403 });
     }
 
@@ -81,7 +81,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!(await verifyAccess(session.user as { id: string; role: string }, quoteId, orderId))) {
+    if (!(await verifyAccess({ user: session.user as { id: string; role: string } }, quoteId, orderId))) {
       return NextResponse.json({ error: "Access denied" }, { status: 403 });
     }
 
