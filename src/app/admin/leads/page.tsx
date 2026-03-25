@@ -113,6 +113,7 @@ const EMPTY_FORM: Omit<Lead, "id" | "createdAt" | "updatedAt"> = {
   notes: "",
   status: "PROSPECT",
   priority: "MEDIUM",
+  locations: [],
 };
 
 const STATUS_OPTIONS = [
