@@ -136,7 +136,7 @@ export async function POST(request: Request) {
         });
       });
 
-      const platformFee = Math.round(subtotal * 0.01 * 100) / 100;
+      const platformFee = Math.round(subtotal * 0.02 * 100) / 100;
       const total = Math.round((subtotal + platformFee) * 100) / 100;
 
       await prisma.$transaction([

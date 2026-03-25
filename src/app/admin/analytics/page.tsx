@@ -158,7 +158,7 @@ export default function AdminAnalyticsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Platform Revenue (Last 6 Months)</CardTitle>
-          <CardDescription>Revenue from platform fees (1%)</CardDescription>
+          <CardDescription>Revenue from platform fees (2%)</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="h-64">

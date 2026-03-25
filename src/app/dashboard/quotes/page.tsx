@@ -420,7 +420,7 @@ export default function QuotesPage() {
                         </div>
                         <div className="flex justify-between gap-4">
                           <span className="text-muted-foreground">
-                            Platform fee (1%)
+                            Platform fee (2%)
                           </span>
                           <span>
                             {quote.platformFee != null

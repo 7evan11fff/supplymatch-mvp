@@ -12,7 +12,7 @@ export function getStripe(): Stripe {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const stripe = new Proxy({} as Stripe, { get: (_, p) => (getStripe() as any)[p] });
 
-const PLATFORM_FEE_RATE = 0.01;
+const PLATFORM_FEE_RATE = 0.02;
 
 export function calculateFees(subtotal: number) {
   const platformFee = Math.round(subtotal * PLATFORM_FEE_RATE * 100) / 100;
@@ -68,7 +68,7 @@ export async function createCheckoutSession({
     {
       price_data: {
         currency: "usd",
-        product_data: { name: "Platform Fee (1%)" },
+        product_data: { name: "Platform Fee (2%)" },
         unit_amount: platformFeeCents,
       },
       quantity: 1,

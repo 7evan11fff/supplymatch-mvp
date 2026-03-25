@@ -333,7 +333,7 @@ export default function OrderDetailPage() {
               <span className="tabular-nums">{formatMoney(order.subtotal)}</span>
             </div>
             <div className="flex justify-between gap-8">
-              <span className="text-muted-foreground">Platform fee (1%)</span>
+              <span className="text-muted-foreground">Platform fee (2%)</span>
               <span className="tabular-nums">
                 {formatMoney(order.platformFee)}
               </span>
