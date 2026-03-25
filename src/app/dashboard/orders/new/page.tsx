@@ -18,11 +18,19 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Loader2, Sparkles } from "lucide-react";
+import {
+  ArrowLeft,
+  Loader2,
+  Sparkles,
+  CheckCircle2,
+  XCircle,
+  AlertTriangle,
+} from "lucide-react";
 
 interface Booking {
   id: string;
   status: string;
+  supplierId: string;
   supplier: { name: string };
 }
 
@@ -32,6 +40,13 @@ interface CatalogItem {
   description: string | null;
   category: string;
   estimatedQuantity: string | null;
+}
+
+interface AvailabilityResult {
+  name: string;
+  available: boolean;
+  confidence: string;
+  reason: string;
 }
 
 export default function NewQuotePage() {
@@ -47,9 +62,17 @@ export default function NewQuotePage() {
     Record<string, { checked: boolean; quantity: string }>
   >({});
 
+  const [availability, setAvailability] = useState<AvailabilityResult[]>([]);
+  const [checkingAvailability, setCheckingAvailability] = useState(false);
+
   const connected = useMemo(
     () => bookings.filter((b) => b.status === "CONNECTED"),
     [bookings]
+  );
+
+  const selectedBooking = useMemo(
+    () => connected.find((b) => b.id === bookingId),
+    [connected, bookingId]
   );
 
   const fetchBookings = useCallback(() => {
@@ -89,6 +112,43 @@ export default function NewQuotePage() {
   useEffect(() => {
     if (connected.length > 0) fetchItems();
   }, [connected.length, fetchItems]);
+
+  useEffect(() => {
+    if (!bookingId || !selectedBooking || items.length === 0) {
+      setAvailability([]);
+      return;
+    }
+
+    setCheckingAvailability(true);
+    setAvailability([]);
+
+    fetch("/api/quotes/check", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        supplierId: selectedBooking.supplierId,
+        items: items.map((it) => ({
+          name: it.name,
+          category: it.category,
+          description: it.description,
+        })),
+      }),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.results) setAvailability(data.results);
+      })
+      .catch(() => {
+        toast.error("Could not check item availability");
+      })
+      .finally(() => setCheckingAvailability(false));
+  }, [bookingId, selectedBooking, items]);
+
+  function getAvailability(itemName: string): AvailabilityResult | undefined {
+    return availability.find(
+      (a) => a.name.toLowerCase() === itemName.toLowerCase()
+    );
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -138,8 +198,14 @@ export default function NewQuotePage() {
         toast.error(data.error || "Failed to submit quote request");
         return;
       }
-      toast.success("Quote request submitted");
-      router.push("/dashboard/orders");
+      if (data.status === "PRICED") {
+        toast.success(
+          "Quote submitted and auto-priced by AI! Review it in your quotes."
+        );
+      } else {
+        toast.success("Quote request submitted");
+      }
+      router.push("/dashboard/quotes");
     } catch {
       toast.error("Failed to submit quote request");
     } finally {
@@ -191,6 +257,8 @@ export default function NewQuotePage() {
     );
   }
 
+  const unavailableCount = availability.filter((a) => !a.available).length;
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <Link
@@ -204,7 +272,8 @@ export default function NewQuotePage() {
       <div>
         <h1 className="text-3xl font-bold">Request a quote</h1>
         <p className="text-muted-foreground mt-1">
-          Choose a connected supplier and the items you want priced.
+          Choose a connected supplier and the items you want priced. AI will
+          check availability and auto-price your quote.
         </p>
       </div>
 
@@ -235,6 +304,41 @@ export default function NewQuotePage() {
           </CardContent>
         </Card>
 
+        {/* Availability status banner */}
+        {bookingId && (checkingAvailability || availability.length > 0) && (
+          <Card
+            className={cn(
+              "border-l-4",
+              checkingAvailability
+                ? "border-l-blue-500"
+                : unavailableCount > 0
+                  ? "border-l-amber-500"
+                  : "border-l-green-500"
+            )}
+          >
+            <CardContent className="py-3">
+              {checkingAvailability ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  AI is checking which items this supplier carries...
+                </div>
+              ) : unavailableCount > 0 ? (
+                <div className="flex items-center gap-2 text-sm text-amber-700 dark:text-amber-400">
+                  <AlertTriangle className="h-4 w-4" />
+                  {unavailableCount} item{unavailableCount !== 1 ? "s" : ""} may
+                  not be available from this supplier. You can still include them
+                  in your quote request.
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-400">
+                  <CheckCircle2 className="h-4 w-4" />
+                  All items appear to be available from this supplier.
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         <Card>
           <CardHeader>
             <CardTitle>Items</CardTitle>
@@ -258,10 +362,14 @@ export default function NewQuotePage() {
                     checked: false,
                     quantity: "1",
                   };
+                  const avail = getAvailability(it.name);
                   return (
                     <li
                       key={it.id}
-                      className="flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center"
+                      className={cn(
+                        "flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center",
+                        avail && !avail.available && "border-amber-300 dark:border-amber-700 bg-amber-50/50 dark:bg-amber-950/20"
+                      )}
                     >
                       <label className="flex flex-1 cursor-pointer items-start gap-3">
                         <input
@@ -278,8 +386,26 @@ export default function NewQuotePage() {
                             }))
                           }
                         />
-                        <div>
-                          <span className="font-medium">{it.name}</span>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-medium">{it.name}</span>
+                            {avail && !checkingAvailability && (
+                              avail.available ? (
+                                <span className="inline-flex items-center gap-1 text-xs text-green-700 dark:text-green-400">
+                                  <CheckCircle2 className="h-3 w-3" />
+                                  Available
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 text-xs text-amber-700 dark:text-amber-400">
+                                  <XCircle className="h-3 w-3" />
+                                  May not be available
+                                </span>
+                              )
+                            )}
+                            {checkingAvailability && bookingId && (
+                              <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                            )}
+                          </div>
                           <div className="mt-1 flex flex-wrap items-center gap-2">
                             <Badge variant="secondary">{it.category}</Badge>
                             {it.estimatedQuantity && (
@@ -291,6 +417,11 @@ export default function NewQuotePage() {
                           {it.description && (
                             <p className="text-sm text-muted-foreground mt-1">
                               {it.description}
+                            </p>
+                          )}
+                          {avail && !avail.available && !checkingAvailability && (
+                            <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                              {avail.reason}
                             </p>
                           )}
                         </div>
@@ -353,7 +484,7 @@ export default function NewQuotePage() {
             {submitting ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Submitting...
+                AI is pricing your quote...
               </>
             ) : (
               "Submit quote request"

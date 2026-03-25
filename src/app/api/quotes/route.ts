@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireSession, requireBusiness } from "@/lib/session";
+import { priceQuoteItems } from "@/lib/openai";
+
+export const maxDuration = 120;
 
 export async function GET(request: Request) {
   try {
@@ -77,6 +80,10 @@ export async function POST(request: Request) {
       );
     }
 
+    const supplier = await prisma.supplier.findUnique({
+      where: { id: booking.supplierId },
+    });
+
     const quote = await prisma.quote.create({
       data: {
         businessId: business.id,
@@ -96,7 +103,66 @@ export async function POST(request: Request) {
       include: { lineItems: true, supplier: true },
     });
 
-    return NextResponse.json(quote, { status: 201 });
+    // Auto-price via AI (web search + estimation)
+    try {
+      const aiPrices = await priceQuoteItems(
+        {
+          name: supplier?.name ?? quote.supplier.name,
+          website: supplier?.website ?? null,
+          industry: supplier?.industry ?? null,
+          description: supplier?.description ?? null,
+          location: supplier?.location ?? null,
+        },
+        quote.lineItems.map((li) => ({
+          name: li.name,
+          description: li.description,
+          quantity: li.quantity,
+          unit: li.unit,
+        }))
+      );
+
+      const priceMap = new Map(aiPrices.map((p) => [p.name, p]));
+      let subtotal = 0;
+
+      const lineItemUpdates = quote.lineItems.map((li) => {
+        const priceInfo = priceMap.get(li.name);
+        const unitPrice = priceInfo?.unitPrice ?? 0;
+        const lineTotal = Math.round(unitPrice * li.quantity * 100) / 100;
+        subtotal += lineTotal;
+
+        return prisma.quoteLineItem.update({
+          where: { id: li.id },
+          data: { unitPrice, lineTotal },
+        });
+      });
+
+      const platformFee = Math.round(subtotal * 0.01 * 100) / 100;
+      const total = Math.round((subtotal + platformFee) * 100) / 100;
+
+      await prisma.$transaction([
+        ...lineItemUpdates,
+        prisma.quote.update({
+          where: { id: quote.id },
+          data: {
+            status: "PRICED",
+            subtotal,
+            platformFee,
+            total,
+            adminNotes: `AI auto-priced. Sources: ${aiPrices.map((p) => `${p.name}: ${p.source} (${p.confidence})`).join("; ")}`,
+          },
+        }),
+      ]);
+
+      const updatedQuote = await prisma.quote.findUnique({
+        where: { id: quote.id },
+        include: { lineItems: true, supplier: true },
+      });
+
+      return NextResponse.json(updatedQuote, { status: 201 });
+    } catch {
+      // If AI pricing fails, return the quote as REQUESTED (manual pricing fallback)
+      return NextResponse.json(quote, { status: 201 });
+    }
   } catch {
     return NextResponse.json({ error: "Failed to create quote" }, { status: 500 });
   }
