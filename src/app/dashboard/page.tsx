@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/db";
+import type { Prisma } from "@/generated/prisma";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import {
@@ -14,6 +15,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Building2, ShoppingCart, Sparkles, ArrowRight } from "lucide-react";
+
+type DashboardBooking = Prisma.BookingRequestGetPayload<{
+  include: { supplier: true };
+}>;
 
 export default async function DashboardPage() {
   const session = await getSession();
@@ -113,7 +118,7 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {recentBookings.map((booking) => (
+              {recentBookings.map((booking: DashboardBooking) => (
                 <div
                   key={booking.id}
                   className="flex items-center justify-between border-b pb-3 last:border-0 last:pb-0"

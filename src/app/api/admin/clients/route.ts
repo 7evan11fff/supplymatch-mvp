@@ -1,7 +1,18 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import type { Prisma } from "@/generated/prisma";
 import { requireAdmin } from "@/lib/session";
 import bcrypt from "bcryptjs";
+
+type UserWithBusinessCounts = Prisma.UserGetPayload<{
+  include: {
+    business: {
+      include: {
+        _count: { select: { items: true; matches: true; bookings: true } };
+      };
+    };
+  };
+}>;
 
 export async function GET(request: Request) {
   try {
@@ -30,7 +41,7 @@ export async function GET(request: Request) {
       orderBy: { createdAt: "desc" },
     });
 
-    const clients = users.map((u) => ({
+    const clients = users.map((u: UserWithBusinessCounts) => ({
       id: u.id,
       email: u.email,
       name: u.name,

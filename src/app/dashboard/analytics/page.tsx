@@ -155,7 +155,10 @@ export default function AnalyticsPage() {
                 <XAxis dataKey="month" className="text-xs" />
                 <YAxis className="text-xs" tickFormatter={(v) => `$${v}`} />
                 <Tooltip
-                  formatter={(value: number) => [formatMoney(value), "Spend"]}
+                  formatter={(value) => [
+                    formatMoney(Number(value)),
+                    "Spend",
+                  ]}
                 />
                 <Bar dataKey="amount" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
               </BarChart>

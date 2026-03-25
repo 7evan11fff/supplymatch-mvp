@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import type { QuoteLineItem } from "@/generated/prisma";
 import { requireBusiness } from "@/lib/session";
 
 export async function POST(
@@ -52,8 +53,8 @@ export async function POST(
         total: quote.total,
         lineItems: {
           create: quote.lineItems
-            .filter((li) => li.unitPrice !== null && li.lineTotal !== null)
-            .map((li) => ({
+            .filter((li: QuoteLineItem) => li.unitPrice !== null && li.lineTotal !== null)
+            .map((li: QuoteLineItem) => ({
               name: li.name,
               description: li.description,
               quantity: li.quantity,
@@ -66,7 +67,7 @@ export async function POST(
     });
 
     if (recurring && frequency) {
-      const itemsSnapshot = quote.lineItems.map((li) => ({
+      const itemsSnapshot = quote.lineItems.map((li: QuoteLineItem) => ({
         name: li.name,
         description: li.description,
         quantity: li.quantity,

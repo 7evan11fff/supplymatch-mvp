@@ -1,4 +1,5 @@
 import { prisma } from "./db";
+import type { BusinessItem, Supplier } from "@/generated/prisma";
 import { analyzeBusinessNeeds, batchScoreSuppliers } from "./openai";
 import { discoverSuppliers } from "./scraper";
 
@@ -61,7 +62,7 @@ export async function runFullAnalysis(businessId: string) {
     location: business.location,
     description: business.description,
     operatingDetails: business.operatingDetails as Record<string, string> | null,
-    items: business.items.map((item) => ({
+    items: business.items.map((item: BusinessItem) => ({
       name: item.name,
       category: item.category,
       description: item.description,
@@ -72,7 +73,7 @@ export async function runFullAnalysis(businessId: string) {
   });
 
   const suppliers = await prisma.supplier.findMany({ take: 50 });
-  const itemsForScoring = business.items.map((i) => ({
+  const itemsForScoring = business.items.map((i: BusinessItem) => ({
     name: i.name,
     category: i.category,
     specifications: i.specifications,
@@ -81,7 +82,7 @@ export async function runFullAnalysis(businessId: string) {
   let scoredMatches = await scoreSupplierBatch(
     analysis.summary,
     itemsForScoring,
-    suppliers.map((s) => ({
+    suppliers.map((s: Supplier) => ({
       id: s.id,
       name: s.name,
       industry: s.industry,
@@ -104,7 +105,7 @@ export async function runFullAnalysis(businessId: string) {
     const newSuppliers = await prisma.supplier.findMany({
       where: {
         source: "AI_DISCOVERED",
-        id: { notIn: suppliers.map((s) => s.id) },
+        id: { notIn: suppliers.map((s: Supplier) => s.id) },
       },
       take: 20,
     });
@@ -113,7 +114,7 @@ export async function runFullAnalysis(businessId: string) {
       const newScores = await scoreSupplierBatch(
         analysis.summary,
         itemsForScoring,
-        newSuppliers.map((s) => ({
+        newSuppliers.map((s: Supplier) => ({
           id: s.id,
           name: s.name,
           industry: s.industry,

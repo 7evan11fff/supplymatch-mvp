@@ -168,7 +168,10 @@ export default function AdminAnalyticsPage() {
                 <XAxis dataKey="month" className="text-xs" />
                 <YAxis className="text-xs" tickFormatter={(v) => `$${v}`} />
                 <Tooltip
-                  formatter={(value: number) => [formatMoney(value), "Revenue"]}
+                  formatter={(value) => [
+                    formatMoney(Number(value)),
+                    "Revenue",
+                  ]}
                 />
                 <Bar dataKey="revenue" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
               </BarChart>

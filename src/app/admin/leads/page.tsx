@@ -333,7 +333,7 @@ export default function LeadsPage() {
             className="pl-10"
           />
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
+        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v ?? "ALL")}>
           <SelectTrigger className="w-44">
             <SelectValue placeholder="Filter status" />
           </SelectTrigger>
@@ -411,7 +411,7 @@ export default function LeadsPage() {
                     <div className="flex items-center gap-1 shrink-0 ml-4">
                       <Select
                         value={lead.status}
-                        onValueChange={(v) => handleStatusChange(lead, v)}
+                        onValueChange={(v) => v && handleStatusChange(lead, v)}
                       >
                         <SelectTrigger className="h-8 text-xs w-32">
                           <SelectValue />
@@ -816,7 +816,7 @@ export default function LeadsPage() {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label>Status</Label>
-                <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
+                <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v ?? form.status })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {STATUS_OPTIONS.map((s) => (
@@ -827,7 +827,7 @@ export default function LeadsPage() {
               </div>
               <div className="space-y-1">
                 <Label>Priority</Label>
-                <Select value={form.priority} onValueChange={(v) => setForm({ ...form, priority: v })}>
+                <Select value={form.priority} onValueChange={(v) => setForm({ ...form, priority: v ?? form.priority })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {PRIORITY_OPTIONS.map((p) => (

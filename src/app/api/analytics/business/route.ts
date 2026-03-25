@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
+import type { Prisma, Quote } from "@/generated/prisma";
 import { prisma } from "@/lib/db";
 import { requireBusiness } from "@/lib/session";
+
+type OrderWithSupplierName = Prisma.OrderGetPayload<{
+  include: { supplier: { select: { name: true } } };
+}>;
 
 export async function GET() {
   try {
@@ -12,7 +17,7 @@ export async function GET() {
       return NextResponse.json({ error: "Business not found" }, { status: 404 });
     }
 
-    const orders = await prisma.order.findMany({
+    const orders: OrderWithSupplierName[] = await prisma.order.findMany({
       where: { businessId: business.id },
       include: { supplier: { select: { name: true } } },
       orderBy: { createdAt: "asc" },
@@ -39,7 +44,7 @@ export async function GET() {
         year: "2-digit",
       });
       const amount = orders
-        .filter((o) => {
+        .filter((o: OrderWithSupplierName) => {
           const created = new Date(o.createdAt);
           return (
             created >= d &&
@@ -48,7 +53,10 @@ export async function GET() {
             o.status !== "PENDING_PAYMENT"
           );
         })
-        .reduce((sum, o) => sum + o.total, 0);
+        .reduce(
+          (sum: number, o: OrderWithSupplierName) => sum + o.total,
+          0,
+        );
       monthlySpend.push({ month: label, amount: Math.round(amount * 100) / 100 });
     }
 
@@ -69,7 +77,9 @@ export async function GET() {
 
     // Quote acceptance rate
     const totalQuotes = quotes.length;
-    const acceptedQuotes = quotes.filter((q) => q.status === "ACCEPTED").length;
+    const acceptedQuotes = quotes.filter(
+      (q: Quote) => q.status === "ACCEPTED",
+    ).length;
     const quoteAcceptanceRate =
       totalQuotes > 0 ? Math.round((acceptedQuotes / totalQuotes) * 100) : 0;
 
@@ -91,8 +101,14 @@ export async function GET() {
       upcomingRecurring,
       totalOrders: orders.length,
       totalSpend: orders
-        .filter((o) => o.status !== "CANCELLED" && o.status !== "PENDING_PAYMENT")
-        .reduce((sum, o) => sum + o.total, 0),
+        .filter(
+          (o: OrderWithSupplierName) =>
+            o.status !== "CANCELLED" && o.status !== "PENDING_PAYMENT",
+        )
+        .reduce(
+          (sum: number, o: OrderWithSupplierName) => sum + o.total,
+          0,
+        ),
     });
   } catch {
     return NextResponse.json({ error: "Failed to load analytics" }, { status: 500 });

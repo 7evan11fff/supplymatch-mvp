@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import type { OrderLineItem } from "@/generated/prisma";
 import { requireBusiness } from "@/lib/session";
 import { createCheckoutSession, getOrCreateStripeCustomer } from "@/lib/stripe";
 
@@ -49,7 +50,7 @@ export async function POST(request: Request) {
 
     const checkoutSession = await createCheckoutSession({
       customerId,
-      lineItems: order.lineItems.map((li) => ({
+      lineItems: order.lineItems.map((li: OrderLineItem) => ({
         name: li.name,
         quantity: Math.round(li.quantity),
         unitAmountCents: Math.round(li.unitPrice * 100),

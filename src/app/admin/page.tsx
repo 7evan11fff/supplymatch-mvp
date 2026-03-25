@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { prisma } from "@/lib/db";
+import type { Prisma } from "@/generated/prisma";
 import {
   Card,
   CardContent,
@@ -8,6 +9,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ClipboardList, Truck, Building2, Users } from "lucide-react";
+
+type RecentBooking = Prisma.BookingRequestGetPayload<{
+  include: { business: true; supplier: true };
+}>;
 
 export default async function AdminDashboard() {
   const [pendingBookings, totalSuppliers, totalBusinesses, totalUsers] =
@@ -92,7 +97,7 @@ export default async function AdminDashboard() {
             </p>
           ) : (
             <div className="space-y-3">
-              {recentBookings.map((booking) => (
+              {recentBookings.map((booking: RecentBooking) => (
                 <div
                   key={booking.id}
                   className="flex items-center justify-between border-b pb-3 last:border-0 last:pb-0"

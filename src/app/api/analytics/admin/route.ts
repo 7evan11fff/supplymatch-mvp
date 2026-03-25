@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
+import type { Order, Quote } from "@/generated/prisma";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/session";
+
+type BusinessUserSignup = { createdAt: Date };
+type QuoteStatusOnly = Pick<Quote, "status">;
+type MatchScoreOnly = { matchScore: number };
 
 export async function GET() {
   try {
@@ -20,7 +25,7 @@ export async function GET() {
       select: { status: true },
     });
 
-    const matches = await prisma.supplierMatch.findMany({
+    const matches: MatchScoreOnly[] = await prisma.supplierMatch.findMany({
       select: { matchScore: true },
     });
 
@@ -35,7 +40,7 @@ export async function GET() {
         year: "2-digit",
       });
       const revenue = orders
-        .filter((o) => {
+        .filter((o: Order) => {
           const created = new Date(o.createdAt);
           return (
             created >= d &&
@@ -44,7 +49,7 @@ export async function GET() {
             o.status !== "PENDING_PAYMENT"
           );
         })
-        .reduce((sum, o) => sum + o.platformFee, 0);
+        .reduce((sum: number, o: Order) => sum + o.platformFee, 0);
       revenueByMonth.push({ month: label, revenue: Math.round(revenue * 100) / 100 });
     }
 
@@ -57,7 +62,7 @@ export async function GET() {
         month: "short",
         year: "2-digit",
       });
-      const signups = users.filter((u) => {
+      const signups = users.filter((u: BusinessUserSignup) => {
         const created = new Date(u.createdAt);
         return created >= d && created < nextMonth;
       }).length;
@@ -67,9 +72,13 @@ export async function GET() {
     // Order funnel
     const orderFunnel = {
       quoted: quotes.length,
-      accepted: quotes.filter((q) => q.status === "ACCEPTED").length,
-      paid: orders.filter((o) => o.status !== "PENDING_PAYMENT" && o.status !== "CANCELLED").length,
-      delivered: orders.filter((o) => o.status === "DELIVERED").length,
+      accepted: quotes.filter((q: QuoteStatusOnly) => q.status === "ACCEPTED")
+        .length,
+      paid: orders.filter(
+        (o: Order) =>
+          o.status !== "PENDING_PAYMENT" && o.status !== "CANCELLED",
+      ).length,
+      delivered: orders.filter((o: Order) => o.status === "DELIVERED").length,
     };
 
     // Match quality distribution
@@ -97,11 +106,17 @@ export async function GET() {
         totalUsers: users.length,
         totalOrders: orders.length,
         totalRevenue: orders
-          .filter((o) => o.status !== "CANCELLED" && o.status !== "PENDING_PAYMENT")
-          .reduce((sum, o) => sum + o.platformFee, 0),
+          .filter(
+            (o: Order) =>
+              o.status !== "CANCELLED" && o.status !== "PENDING_PAYMENT",
+          )
+          .reduce((sum: number, o: Order) => sum + o.platformFee, 0),
         totalGMV: orders
-          .filter((o) => o.status !== "CANCELLED" && o.status !== "PENDING_PAYMENT")
-          .reduce((sum, o) => sum + o.total, 0),
+          .filter(
+            (o: Order) =>
+              o.status !== "CANCELLED" && o.status !== "PENDING_PAYMENT",
+          )
+          .reduce((sum: number, o: Order) => sum + o.total, 0),
       },
     });
   } catch {
