@@ -40,15 +40,7 @@ export default function LoginPage() {
       return;
     }
 
-    const session = await fetch("/api/auth/session").then((r) => r.json());
-    const role = session?.user?.role;
-    if (role === "ADMIN") {
-      router.push("/admin");
-    } else if (role === "SUPPLIER") {
-      router.push("/supplier");
-    } else {
-      router.push("/dashboard");
-    }
+    router.push("/dashboard");
     router.refresh();
   }
 

@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 
 export async function POST(request: Request) {
   try {
-    const { email, password, name, role, companyName } = await request.json();
+    const { email, password, name } = await request.json();
 
     if (!email || !password) {
       return NextResponse.json(
@@ -28,15 +28,6 @@ export async function POST(request: Request) {
       );
     }
 
-    const userRole = role === "SUPPLIER" ? "SUPPLIER" : "BUSINESS";
-
-    if (userRole === "SUPPLIER" && !companyName) {
-      return NextResponse.json(
-        { error: "Company name is required for supplier accounts" },
-        { status: 400 }
-      );
-    }
-
     const passwordHash = await bcrypt.hash(password, 12);
 
     const user = await prisma.user.create({
@@ -44,20 +35,9 @@ export async function POST(request: Request) {
         email,
         passwordHash,
         name: name || null,
-        role: userRole,
+        role: "BUSINESS",
       },
     });
-
-    if (userRole === "SUPPLIER") {
-      await prisma.supplier.create({
-        data: {
-          userId: user.id,
-          name: companyName,
-          source: "MANUAL",
-          verified: false,
-        },
-      });
-    }
 
     return NextResponse.json(
       { id: user.id, email: user.email },

@@ -2,6 +2,33 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireSession } from "@/lib/session";
 
+async function verifyAccess(
+  session: { user: { id: string; role: string } },
+  quoteId: string | null,
+  orderId: string | null
+) {
+  if (session.user.role === "ADMIN") return true;
+
+  const business = await prisma.business.findUnique({
+    where: { userId: session.user.id },
+  });
+  if (!business) return false;
+
+  if (quoteId) {
+    const quote = await prisma.quote.findFirst({
+      where: { id: quoteId, businessId: business.id },
+    });
+    if (!quote) return false;
+  }
+  if (orderId) {
+    const order = await prisma.order.findFirst({
+      where: { id: orderId, businessId: business.id },
+    });
+    if (!order) return false;
+  }
+  return true;
+}
+
 export async function GET(request: Request) {
   try {
     const session = await requireSession();
@@ -16,59 +43,13 @@ export async function GET(request: Request) {
       );
     }
 
+    if (!(await verifyAccess(session.user as { id: string; role: string }, quoteId, orderId))) {
+      return NextResponse.json({ error: "Access denied" }, { status: 403 });
+    }
+
     const where: Record<string, string> = {};
     if (quoteId) where.quoteId = quoteId;
     if (orderId) where.orderId = orderId;
-
-    // Verify user has access to this quote/order
-    if (session.user.role === "BUSINESS") {
-      const business = await prisma.business.findUnique({
-        where: { userId: session.user.id },
-      });
-      if (!business) {
-        return NextResponse.json({ error: "Business not found" }, { status: 403 });
-      }
-      if (quoteId) {
-        const quote = await prisma.quote.findFirst({
-          where: { id: quoteId, businessId: business.id },
-        });
-        if (!quote) {
-          return NextResponse.json({ error: "Access denied" }, { status: 403 });
-        }
-      }
-      if (orderId) {
-        const order = await prisma.order.findFirst({
-          where: { id: orderId, businessId: business.id },
-        });
-        if (!order) {
-          return NextResponse.json({ error: "Access denied" }, { status: 403 });
-        }
-      }
-    } else if (session.user.role === "SUPPLIER") {
-      const supplier = await prisma.supplier.findUnique({
-        where: { userId: session.user.id },
-      });
-      if (!supplier) {
-        return NextResponse.json({ error: "Supplier not found" }, { status: 403 });
-      }
-      if (quoteId) {
-        const quote = await prisma.quote.findFirst({
-          where: { id: quoteId, supplierId: supplier.id },
-        });
-        if (!quote) {
-          return NextResponse.json({ error: "Access denied" }, { status: 403 });
-        }
-      }
-      if (orderId) {
-        const order = await prisma.order.findFirst({
-          where: { id: orderId, supplierId: supplier.id },
-        });
-        if (!order) {
-          return NextResponse.json({ error: "Access denied" }, { status: 403 });
-        }
-      }
-    }
-    // ADMIN has access to everything
 
     const messages = await prisma.message.findMany({
       where,
@@ -100,53 +81,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // Verify access (same as GET)
-    if (session.user.role === "BUSINESS") {
-      const business = await prisma.business.findUnique({
-        where: { userId: session.user.id },
-      });
-      if (!business) {
-        return NextResponse.json({ error: "Business not found" }, { status: 403 });
-      }
-      if (quoteId) {
-        const quote = await prisma.quote.findFirst({
-          where: { id: quoteId, businessId: business.id },
-        });
-        if (!quote) {
-          return NextResponse.json({ error: "Access denied" }, { status: 403 });
-        }
-      }
-      if (orderId) {
-        const order = await prisma.order.findFirst({
-          where: { id: orderId, businessId: business.id },
-        });
-        if (!order) {
-          return NextResponse.json({ error: "Access denied" }, { status: 403 });
-        }
-      }
-    } else if (session.user.role === "SUPPLIER") {
-      const supplier = await prisma.supplier.findUnique({
-        where: { userId: session.user.id },
-      });
-      if (!supplier) {
-        return NextResponse.json({ error: "Supplier not found" }, { status: 403 });
-      }
-      if (quoteId) {
-        const quote = await prisma.quote.findFirst({
-          where: { id: quoteId, supplierId: supplier.id },
-        });
-        if (!quote) {
-          return NextResponse.json({ error: "Access denied" }, { status: 403 });
-        }
-      }
-      if (orderId) {
-        const order = await prisma.order.findFirst({
-          where: { id: orderId, supplierId: supplier.id },
-        });
-        if (!order) {
-          return NextResponse.json({ error: "Access denied" }, { status: 403 });
-        }
-      }
+    if (!(await verifyAccess(session.user as { id: string; role: string }, quoteId, orderId))) {
+      return NextResponse.json({ error: "Access denied" }, { status: 403 });
     }
 
     const message = await prisma.message.create({

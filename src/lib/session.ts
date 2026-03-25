@@ -22,9 +22,3 @@ export async function requireBusiness() {
   if (session.user.role !== "BUSINESS") throw new Error("Forbidden");
   return session;
 }
-
-export async function requireSupplier() {
-  const session = await requireSession();
-  if (session.user.role !== "SUPPLIER") throw new Error("Forbidden");
-  return session;
-}

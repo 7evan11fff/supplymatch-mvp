@@ -1,8 +1,8 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,23 +16,10 @@ import {
 } from "@/components/ui/card";
 
 export default function SignUpPage() {
-  return (
-    <Suspense>
-      <SignUpForm />
-    </Suspense>
-  );
-}
-
-function SignUpForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const roleParam = searchParams.get("role");
-  const isSupplier = roleParam === "supplier";
-
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [companyName, setCompanyName] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -42,16 +29,10 @@ function SignUpForm() {
     setLoading(true);
 
     try {
-      const body: Record<string, string> = { email, password, name };
-      if (isSupplier) {
-        body.role = "SUPPLIER";
-        body.companyName = companyName;
-      }
-
       const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify({ email, password, name }),
       });
 
       const data = await res.json();
@@ -74,11 +55,7 @@ function SignUpForm() {
         return;
       }
 
-      if (isSupplier) {
-        router.push("/supplier");
-      } else {
-        router.push("/dashboard/profile");
-      }
+      router.push("/dashboard/profile");
       router.refresh();
     } catch {
       setError("Something went wrong");
@@ -90,13 +67,9 @@ function SignUpForm() {
     <div className="min-h-screen flex items-center justify-center px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">
-            {isSupplier ? "Register as a Supplier" : "Create your account"}
-          </CardTitle>
+          <CardTitle className="text-2xl">Create your account</CardTitle>
           <CardDescription>
-            {isSupplier
-              ? "Join SupplyMatch to receive quote requests and manage orders"
-              : "Get matched with the best suppliers for your business"}
+            Get matched with the best suppliers for your business
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -116,19 +89,6 @@ function SignUpForm() {
                 onChange={(e) => setName(e.target.value)}
               />
             </div>
-            {isSupplier && (
-              <div className="space-y-2">
-                <Label htmlFor="companyName">Company Name</Label>
-                <Input
-                  id="companyName"
-                  type="text"
-                  placeholder="Acme Supplies Inc."
-                  value={companyName}
-                  onChange={(e) => setCompanyName(e.target.value)}
-                  required
-                />
-              </div>
-            )}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -156,39 +116,15 @@ function SignUpForm() {
               {loading ? "Creating account..." : "Create Account"}
             </Button>
           </form>
-          <div className="text-center text-sm text-muted-foreground mt-4 space-y-2">
-            <p>
-              Already have an account?{" "}
-              <Link
-                href="/auth/login"
-                className="text-primary underline-offset-4 hover:underline"
-              >
-                Sign in
-              </Link>
-            </p>
-            {!isSupplier && (
-              <p>
-                Are you a supplier?{" "}
-                <Link
-                  href="/auth/signup?role=supplier"
-                  className="text-primary underline-offset-4 hover:underline"
-                >
-                  Register as supplier
-                </Link>
-              </p>
-            )}
-            {isSupplier && (
-              <p>
-                Looking to buy?{" "}
-                <Link
-                  href="/auth/signup"
-                  className="text-primary underline-offset-4 hover:underline"
-                >
-                  Register as a business
-                </Link>
-              </p>
-            )}
-          </div>
+          <p className="text-center text-sm text-muted-foreground mt-4">
+            Already have an account?{" "}
+            <Link
+              href="/auth/login"
+              className="text-primary underline-offset-4 hover:underline"
+            >
+              Sign in
+            </Link>
+          </p>
         </CardContent>
       </Card>
     </div>

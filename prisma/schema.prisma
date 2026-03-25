@@ -10,7 +10,6 @@ datasource db {
 enum UserRole {
   BUSINESS
   ADMIN
-  SUPPLIER
 }
 
 enum SupplierSource {
@@ -85,7 +84,6 @@ model User {
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   business      Business?
-  supplier      Supplier?      @relation("SupplierUser")
   notifications Notification[]
   sentMessages  Message[]
 }
@@ -141,8 +139,6 @@ model BusinessItem {
 
 model Supplier {
   id              String           @id @default(cuid())
-  userId          String?          @unique
-  user            User?            @relation("SupplierUser", fields: [userId], references: [id], onDelete: SetNull)
   name            String
   industry        String?
   location        String?
