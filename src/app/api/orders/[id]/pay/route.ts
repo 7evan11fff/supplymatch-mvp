@@ -2,14 +2,13 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireBusiness } from "@/lib/session";
 
-export async function POST(request: Request) {
+export async function POST(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     const session = await requireBusiness();
-    const { orderId } = await request.json();
-
-    if (!orderId) {
-      return NextResponse.json({ error: "Order ID required" }, { status: 400 });
-    }
+    const { id } = await params;
 
     const business = await prisma.business.findUnique({
       where: { userId: session.user.id },
@@ -19,7 +18,7 @@ export async function POST(request: Request) {
     }
 
     const order = await prisma.order.findFirst({
-      where: { id: orderId, businessId: business.id, status: "PENDING_PAYMENT" },
+      where: { id, businessId: business.id, status: "PENDING_PAYMENT" },
     });
     if (!order) {
       return NextResponse.json(
@@ -28,11 +27,16 @@ export async function POST(request: Request) {
       );
     }
 
-    const origin = new URL(request.url).origin;
-    const checkoutUrl = `${origin}/dashboard/orders/${order.id}/checkout`;
+    await prisma.order.update({
+      where: { id },
+      data: {
+        status: "PAID",
+        stripePaymentIntentId: `demo_${Date.now()}`,
+      },
+    });
 
-    return NextResponse.json({ url: checkoutUrl });
+    return NextResponse.json({ success: true });
   } catch {
-    return NextResponse.json({ error: "Checkout failed" }, { status: 500 });
+    return NextResponse.json({ error: "Payment failed" }, { status: 500 });
   }
 }
