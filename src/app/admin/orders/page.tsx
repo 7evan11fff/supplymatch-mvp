@@ -14,11 +14,19 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
   ChevronDown,
   ChevronRight,
   Package,
   Truck,
   CircleCheck,
+  XCircle,
 } from "lucide-react";
 
 interface Order {
@@ -71,6 +79,7 @@ export default function AdminOrdersPage() {
   const [tab, setTab] = useState("PAID");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<Order | null>(null);
 
   const fetchOrders = useCallback(() => {
     setLoading(true);
@@ -230,6 +239,18 @@ export default function AdminOrdersPage() {
                             Mark delivered
                           </Button>
                         ) : null}
+                        {order.status !== "DELIVERED" &&
+                          order.status !== "CANCELLED" && (
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => setCancelTarget(order)}
+                              disabled={updatingId === order.id}
+                            >
+                              <XCircle className="h-3.5 w-3.5 mr-1" />
+                              Cancel
+                            </Button>
+                          )}
                       </div>
                       {open ? (
                         <>
@@ -295,6 +316,42 @@ export default function AdminOrdersPage() {
           )}
         </TabsContent>
       </Tabs>
+
+      <Dialog open={!!cancelTarget} onOpenChange={(open) => !open && setCancelTarget(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Cancel Order</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to cancel the order from{" "}
+              <span className="font-medium text-foreground">
+                {cancelTarget?.business.name}
+              </span>{" "}
+              to{" "}
+              <span className="font-medium text-foreground">
+                {cancelTarget?.supplier.name}
+              </span>{" "}
+              ({cancelTarget ? formatMoney(cancelTarget.total) : ""})?
+              This cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-3 justify-end">
+            <Button variant="outline" onClick={() => setCancelTarget(null)}>
+              Keep Order
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (cancelTarget) {
+                  void updateStatus(cancelTarget.id, "CANCELLED");
+                  setCancelTarget(null);
+                }
+              }}
+            >
+              Cancel Order
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
