@@ -49,6 +49,20 @@ import {
   ChevronUp,
 } from "lucide-react";
 
+interface LeadLocation {
+  id: string;
+  name: string;
+  address: string | null;
+  city: string;
+  state: string;
+  zip: string | null;
+  phone: string | null;
+  managerName: string | null;
+  managerEmail: string | null;
+  managerPhone: string | null;
+  notes: string | null;
+}
+
 interface Lead {
   id: string;
   businessName: string;
@@ -74,6 +88,7 @@ interface Lead {
   priority: string;
   createdAt: string;
   updatedAt: string;
+  locations: LeadLocation[];
 }
 
 const EMPTY_FORM: Omit<Lead, "id" | "createdAt" | "updatedAt"> = {
@@ -484,126 +499,164 @@ export default function LeadsPage() {
                   </button>
 
                   {isExpanded && (
-                    <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                      {/* CEO Contact */}
-                      <div className="bg-muted/50 rounded-lg p-3 space-y-2">
-                        <h4 className="font-semibold flex items-center gap-1.5">
-                          <Crown className="h-4 w-4 text-amber-500" /> CEO / Owner
-                        </h4>
-                        {lead.ceoName ? (
-                          <>
-                            <p>{lead.ceoName}</p>
-                            {lead.ceoEmail && (
-                              <p className="flex items-center gap-1.5 text-muted-foreground">
-                                <Mail className="h-3 w-3" /> {lead.ceoEmail}
-                                <button onClick={() => copyToClipboard(lead.ceoEmail!)} className="hover:text-foreground">
-                                  <Copy className="h-3 w-3" />
-                                </button>
-                              </p>
-                            )}
-                            {lead.ceoPhone && (
-                              <p className="flex items-center gap-1.5 text-muted-foreground">
-                                <Phone className="h-3 w-3" /> {lead.ceoPhone}
-                                <button onClick={() => copyToClipboard(lead.ceoPhone!)} className="hover:text-foreground">
-                                  <Copy className="h-3 w-3" />
-                                </button>
-                              </p>
-                            )}
-                          </>
-                        ) : (
-                          <p className="text-muted-foreground italic">No CEO info on file</p>
-                        )}
-                      </div>
-
-                      {/* Manager Contact */}
-                      <div className="bg-muted/50 rounded-lg p-3 space-y-2">
-                        <h4 className="font-semibold flex items-center gap-1.5">
-                          <UserRound className="h-4 w-4 text-blue-500" /> Manager
-                        </h4>
-                        {lead.managerName ? (
-                          <>
-                            <p>{lead.managerName}</p>
-                            {lead.managerEmail && (
-                              <p className="flex items-center gap-1.5 text-muted-foreground">
-                                <Mail className="h-3 w-3" /> {lead.managerEmail}
-                                <button onClick={() => copyToClipboard(lead.managerEmail!)} className="hover:text-foreground">
-                                  <Copy className="h-3 w-3" />
-                                </button>
-                              </p>
-                            )}
-                            {lead.managerPhone && (
-                              <p className="flex items-center gap-1.5 text-muted-foreground">
-                                <Phone className="h-3 w-3" /> {lead.managerPhone}
-                                <button onClick={() => copyToClipboard(lead.managerPhone!)} className="hover:text-foreground">
-                                  <Copy className="h-3 w-3" />
-                                </button>
-                              </p>
-                            )}
-                          </>
-                        ) : (
-                          <p className="text-muted-foreground italic">No manager info on file</p>
-                        )}
-                      </div>
-
-                      {/* Location */}
-                      <div className="bg-muted/50 rounded-lg p-3 space-y-2">
-                        <h4 className="font-semibold flex items-center gap-1.5">
-                          <MapPin className="h-4 w-4 text-green-500" /> Location
-                        </h4>
-                        {lead.address && <p>{lead.address}</p>}
-                        <p>{lead.city}, {lead.state} {lead.zip}</p>
-                        <p className="text-muted-foreground">
-                          {lead.locationCount} location{lead.locationCount !== 1 ? "s" : ""}
-                          {lead.isFranchise ? " (Franchise)" : " (Independent)"}
-                        </p>
-                      </div>
-
-                      {/* General Contact */}
-                      <div className="bg-muted/50 rounded-lg p-3 space-y-2">
-                        <h4 className="font-semibold flex items-center gap-1.5">
-                          <Phone className="h-4 w-4 text-violet-500" /> General Contact
-                        </h4>
-                        {lead.generalPhone && (
-                          <p className="flex items-center gap-1.5">
-                            <Phone className="h-3 w-3 text-muted-foreground" /> {lead.generalPhone}
-                          </p>
-                        )}
-                        {lead.generalEmail && (
-                          <p className="flex items-center gap-1.5">
-                            <Mail className="h-3 w-3 text-muted-foreground" /> {lead.generalEmail}
-                          </p>
-                        )}
-                        {lead.website && (
-                          <p className="flex items-center gap-1.5">
-                            <Globe className="h-3 w-3 text-muted-foreground" />
-                            <a href={lead.website} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                              {lead.website.replace(/^https?:\/\/(www\.)?/, "")}
-                            </a>
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Additional Contacts */}
-                      {lead.additionalContacts && (
-                        <div className="md:col-span-2 bg-muted/50 rounded-lg p-3 space-y-2">
+                    <div className="mt-3 space-y-4 text-sm">
+                      {/* Corporate contacts row */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div className="bg-muted/50 rounded-lg p-3 space-y-2">
                           <h4 className="font-semibold flex items-center gap-1.5">
-                            <Users className="h-4 w-4 text-cyan-500" /> Additional Contacts & Locations
+                            <Crown className="h-4 w-4 text-amber-500" /> CEO / Owner
                           </h4>
-                          <p className="text-muted-foreground whitespace-pre-wrap text-xs leading-relaxed">
-                            {lead.additionalContacts}
-                          </p>
+                          {lead.ceoName ? (
+                            <>
+                              <p>{lead.ceoName}</p>
+                              {lead.ceoEmail && (
+                                <p className="flex items-center gap-1.5 text-muted-foreground">
+                                  <Mail className="h-3 w-3" /> {lead.ceoEmail}
+                                  <button onClick={() => copyToClipboard(lead.ceoEmail!)} className="hover:text-foreground"><Copy className="h-3 w-3" /></button>
+                                </p>
+                              )}
+                              {lead.ceoPhone && (
+                                <p className="flex items-center gap-1.5 text-muted-foreground">
+                                  <Phone className="h-3 w-3" /> {lead.ceoPhone}
+                                  <button onClick={() => copyToClipboard(lead.ceoPhone!)} className="hover:text-foreground"><Copy className="h-3 w-3" /></button>
+                                </p>
+                              )}
+                            </>
+                          ) : (
+                            <p className="text-muted-foreground italic">No CEO info on file</p>
+                          )}
+                        </div>
+
+                        <div className="bg-muted/50 rounded-lg p-3 space-y-2">
+                          <h4 className="font-semibold flex items-center gap-1.5">
+                            <UserRound className="h-4 w-4 text-blue-500" /> General Manager
+                          </h4>
+                          {lead.managerName ? (
+                            <>
+                              <p>{lead.managerName}</p>
+                              {lead.managerEmail && (
+                                <p className="flex items-center gap-1.5 text-muted-foreground">
+                                  <Mail className="h-3 w-3" /> {lead.managerEmail}
+                                  <button onClick={() => copyToClipboard(lead.managerEmail!)} className="hover:text-foreground"><Copy className="h-3 w-3" /></button>
+                                </p>
+                              )}
+                              {lead.managerPhone && (
+                                <p className="flex items-center gap-1.5 text-muted-foreground">
+                                  <Phone className="h-3 w-3" /> {lead.managerPhone}
+                                  <button onClick={() => copyToClipboard(lead.managerPhone!)} className="hover:text-foreground"><Copy className="h-3 w-3" /></button>
+                                </p>
+                              )}
+                            </>
+                          ) : (
+                            <p className="text-muted-foreground italic">No manager info on file</p>
+                          )}
+                        </div>
+
+                        <div className="bg-muted/50 rounded-lg p-3 space-y-2">
+                          <h4 className="font-semibold flex items-center gap-1.5">
+                            <Globe className="h-4 w-4 text-violet-500" /> General Contact
+                          </h4>
+                          {lead.generalPhone && (
+                            <p className="flex items-center gap-1.5">
+                              <Phone className="h-3 w-3 text-muted-foreground" /> {lead.generalPhone}
+                              <button onClick={() => copyToClipboard(lead.generalPhone!)} className="hover:text-foreground"><Copy className="h-3 w-3" /></button>
+                            </p>
+                          )}
+                          {lead.generalEmail && (
+                            <p className="flex items-center gap-1.5">
+                              <Mail className="h-3 w-3 text-muted-foreground" /> {lead.generalEmail}
+                              <button onClick={() => copyToClipboard(lead.generalEmail!)} className="hover:text-foreground"><Copy className="h-3 w-3" /></button>
+                            </p>
+                          )}
+                          {lead.website && (
+                            <p className="flex items-center gap-1.5">
+                              <ExternalLink className="h-3 w-3 text-muted-foreground" />
+                              <a href={lead.website} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                                {lead.website.replace(/^https?:\/\/(www\.)?/, "")}
+                              </a>
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Individual Locations */}
+                      {lead.locations && lead.locations.length > 0 && (
+                        <div>
+                          <h4 className="font-semibold flex items-center gap-1.5 mb-3">
+                            <MapPin className="h-4 w-4 text-green-500" />
+                            All Locations ({lead.locations.length})
+                          </h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {lead.locations.map((loc, i) => (
+                              <div key={loc.id || i} className="border rounded-lg p-3 space-y-1.5 bg-background">
+                                <p className="font-medium text-foreground flex items-center gap-1.5">
+                                  <Store className="h-3.5 w-3.5 text-green-500" />
+                                  {loc.name}
+                                </p>
+                                {loc.address && (
+                                  <p className="text-muted-foreground text-xs flex items-center gap-1.5">
+                                    <MapPin className="h-3 w-3 shrink-0" />
+                                    {loc.address}, {loc.city}, {loc.state} {loc.zip}
+                                    <button onClick={() => copyToClipboard(`${loc.address}, ${loc.city}, ${loc.state} ${loc.zip || ""}`)} className="hover:text-foreground shrink-0"><Copy className="h-3 w-3" /></button>
+                                  </p>
+                                )}
+                                {loc.phone && (
+                                  <p className="text-muted-foreground text-xs flex items-center gap-1.5">
+                                    <Phone className="h-3 w-3 shrink-0" />
+                                    {loc.phone}
+                                    <button onClick={() => copyToClipboard(loc.phone!)} className="hover:text-foreground shrink-0"><Copy className="h-3 w-3" /></button>
+                                  </p>
+                                )}
+                                {loc.managerName && (
+                                  <div className="pt-1 border-t mt-1.5">
+                                    <p className="text-xs flex items-center gap-1.5">
+                                      <UserRound className="h-3 w-3 text-blue-500 shrink-0" />
+                                      <span className="font-medium">{loc.managerName}</span>
+                                    </p>
+                                    {loc.managerEmail && (
+                                      <p className="text-muted-foreground text-xs flex items-center gap-1.5 ml-4">
+                                        <Mail className="h-3 w-3 shrink-0" /> {loc.managerEmail}
+                                        <button onClick={() => copyToClipboard(loc.managerEmail!)} className="hover:text-foreground shrink-0"><Copy className="h-3 w-3" /></button>
+                                      </p>
+                                    )}
+                                    {loc.managerPhone && (
+                                      <p className="text-muted-foreground text-xs flex items-center gap-1.5 ml-4">
+                                        <Phone className="h-3 w-3 shrink-0" /> {loc.managerPhone}
+                                        <button onClick={() => copyToClipboard(loc.managerPhone!)} className="hover:text-foreground shrink-0"><Copy className="h-3 w-3" /></button>
+                                      </p>
+                                    )}
+                                  </div>
+                                )}
+                                {loc.notes && (
+                                  <p className="text-muted-foreground/70 text-xs italic pt-1">{loc.notes}</p>
+                                )}
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       )}
 
-                      {/* Notes */}
-                      {lead.notes && (
-                        <div className="md:col-span-2 bg-muted/50 rounded-lg p-3 space-y-2">
-                          <h4 className="font-semibold">Notes</h4>
-                          <p className="text-muted-foreground whitespace-pre-wrap text-xs leading-relaxed">
-                            {lead.notes}
-                          </p>
-                        </div>
-                      )}
+                      {/* Additional contacts + notes */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {lead.additionalContacts && (
+                          <div className="bg-muted/50 rounded-lg p-3 space-y-2">
+                            <h4 className="font-semibold flex items-center gap-1.5">
+                              <Users className="h-4 w-4 text-cyan-500" /> Additional Contacts
+                            </h4>
+                            <p className="text-muted-foreground whitespace-pre-wrap text-xs leading-relaxed">
+                              {lead.additionalContacts}
+                            </p>
+                          </div>
+                        )}
+                        {lead.notes && (
+                          <div className="bg-muted/50 rounded-lg p-3 space-y-2">
+                            <h4 className="font-semibold">Notes</h4>
+                            <p className="text-muted-foreground whitespace-pre-wrap text-xs leading-relaxed">
+                              {lead.notes}
+                            </p>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </CardContent>

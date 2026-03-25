@@ -27,6 +27,7 @@ export async function GET(request: Request) {
 
     const leads = await prisma.lead.findMany({
       where,
+      include: { locations: true },
       orderBy: [{ priority: "asc" }, { createdAt: "desc" }],
     });
 
@@ -40,31 +41,38 @@ export async function POST(request: Request) {
   try {
     await requireAdmin();
     const body = await request.json();
+    const { locations, ...leadData } = body;
 
     const lead = await prisma.lead.create({
       data: {
-        businessName: body.businessName,
-        website: body.website || null,
-        industry: body.industry,
-        isFranchise: body.isFranchise ?? false,
-        locationCount: body.locationCount ?? 1,
-        address: body.address || null,
-        city: body.city || "Austin",
-        state: body.state || "TX",
-        zip: body.zip || null,
-        generalPhone: body.generalPhone || null,
-        generalEmail: body.generalEmail || null,
-        managerName: body.managerName || null,
-        managerEmail: body.managerEmail || null,
-        managerPhone: body.managerPhone || null,
-        ceoName: body.ceoName || null,
-        ceoEmail: body.ceoEmail || null,
-        ceoPhone: body.ceoPhone || null,
-        additionalContacts: body.additionalContacts || null,
-        notes: body.notes || null,
-        status: body.status || "PROSPECT",
-        priority: body.priority || "MEDIUM",
+        businessName: leadData.businessName,
+        website: leadData.website || null,
+        industry: leadData.industry,
+        isFranchise: leadData.isFranchise ?? false,
+        locationCount: leadData.locationCount ?? 1,
+        address: leadData.address || null,
+        city: leadData.city || "Austin",
+        state: leadData.state || "TX",
+        zip: leadData.zip || null,
+        generalPhone: leadData.generalPhone || null,
+        generalEmail: leadData.generalEmail || null,
+        managerName: leadData.managerName || null,
+        managerEmail: leadData.managerEmail || null,
+        managerPhone: leadData.managerPhone || null,
+        ceoName: leadData.ceoName || null,
+        ceoEmail: leadData.ceoEmail || null,
+        ceoPhone: leadData.ceoPhone || null,
+        additionalContacts: leadData.additionalContacts || null,
+        notes: leadData.notes || null,
+        status: leadData.status || "PROSPECT",
+        priority: leadData.priority || "MEDIUM",
+        ...(locations?.length && {
+          locations: {
+            create: locations,
+          },
+        }),
       },
+      include: { locations: true },
     });
 
     return NextResponse.json(lead);
@@ -80,15 +88,29 @@ export async function PUT(request: Request) {
   try {
     await requireAdmin();
     const body = await request.json();
-    const { id, ...data } = body;
+    const { id, locations, ...data } = body;
 
     if (!id) {
       return NextResponse.json({ error: "Lead ID required" }, { status: 400 });
     }
 
+    if (locations !== undefined) {
+      await prisma.leadLocation.deleteMany({ where: { leadId: id } });
+      if (locations.length > 0) {
+        await prisma.leadLocation.createMany({
+          data: locations.map((loc: Record<string, unknown>) => ({
+            ...loc,
+            leadId: id,
+            id: undefined,
+          })),
+        });
+      }
+    }
+
     const lead = await prisma.lead.update({
       where: { id },
       data,
+      include: { locations: true },
     });
 
     return NextResponse.json(lead);

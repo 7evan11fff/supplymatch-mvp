@@ -260,15 +260,15 @@ model OrderLineItem {
 }
 
 model Lead {
-  id              String       @id @default(cuid())
+  id              String         @id @default(cuid())
   businessName    String
   website         String?
   industry        String
-  isFranchise     Boolean      @default(false)
-  locationCount   Int          @default(1)
+  isFranchise     Boolean        @default(false)
+  locationCount   Int            @default(1)
   address         String?
-  city            String       @default("Austin")
-  state           String       @default("TX")
+  city            String         @default("Austin")
+  state           String         @default("TX")
   zip             String?
   generalPhone    String?
   generalEmail    String?
@@ -278,12 +278,31 @@ model Lead {
   ceoName         String?
   ceoEmail        String?
   ceoPhone        String?
-  additionalContacts String?   @db.Text
-  notes           String?      @db.Text
-  status          LeadStatus   @default(PROSPECT)
-  priority        LeadPriority @default(MEDIUM)
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  additionalContacts String?     @db.Text
+  notes           String?        @db.Text
+  status          LeadStatus     @default(PROSPECT)
+  priority        LeadPriority   @default(MEDIUM)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  locations       LeadLocation[]
+}
+
+model LeadLocation {
+  id           String  @id @default(cuid())
+  leadId       String
+  lead         Lead    @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  name         String
+  address      String?
+  city         String  @default("Austin")
+  state        String  @default("TX")
+  zip          String?
+  phone        String?
+  managerName  String?
+  managerEmail String?
+  managerPhone String?
+  notes        String? @db.Text
+
+  @@index([leadId])
 }
 
 model RecurringOrder {
