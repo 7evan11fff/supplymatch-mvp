@@ -267,11 +267,15 @@ export default function LeadsPage() {
     }
   }
 
-  async function handleSeed() {
-    if (!confirm("Seed the database with 9 Austin-area B2B leads? This only works if no leads exist yet.")) return;
+  async function handleSeed(force = false) {
+    const msg = force
+      ? "This will DELETE all existing leads and re-seed with the latest Austin-area data (9 businesses, all locations). Continue?"
+      : "Seed the database with 9 Austin-area B2B leads and all their individual locations?";
+    if (!confirm(msg)) return;
     setSeeding(true);
     try {
-      const res = await fetch("/api/admin/leads/seed", { method: "POST" });
+      const url = force ? "/api/admin/leads/seed?force=true" : "/api/admin/leads/seed";
+      const res = await fetch(url, { method: "POST" });
       const data = await res.json();
       if (!res.ok) {
         toast.error(data.message || data.error || "Seed failed");
@@ -310,9 +314,13 @@ export default function LeadsPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={handleSeed} disabled={seeding}>
+          <Button variant="outline" onClick={() => handleSeed(false)} disabled={seeding}>
             <Database className="h-4 w-4 mr-2" />
-            {seeding ? "Seeding..." : "Seed Austin Leads"}
+            {seeding ? "Seeding..." : "Seed Leads"}
+          </Button>
+          <Button variant="outline" onClick={() => handleSeed(true)} disabled={seeding}>
+            <Database className="h-4 w-4 mr-2" />
+            {seeding ? "Re-seeding..." : "Re-seed All"}
           </Button>
           <Button onClick={openCreate}>
             <Plus className="h-4 w-4 mr-2" />

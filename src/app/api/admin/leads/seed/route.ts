@@ -311,16 +311,23 @@ const AUSTIN_LEADS: LeadSeed[] = [
   },
 ];
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
     await requireAdmin();
+    const { searchParams } = new URL(request.url);
+    const force = searchParams.get("force") === "true";
 
     const existing = await prisma.lead.count();
-    if (existing > 0) {
+    if (existing > 0 && !force) {
       return NextResponse.json(
-        { message: `${existing} leads already exist. Delete them first to re-seed.` },
+        { message: `${existing} leads already exist. Use "Re-seed" to replace them with updated data.` },
         { status: 409 }
       );
+    }
+
+    if (existing > 0) {
+      await prisma.leadLocation.deleteMany({});
+      await prisma.lead.deleteMany({});
     }
 
     let count = 0;
@@ -347,8 +354,9 @@ export async function POST() {
       count++;
     }
 
+    const totalLocations = AUSTIN_LEADS.reduce((sum, l) => sum + l.locations.length, 0);
     return NextResponse.json({
-      message: `Seeded ${count} Austin-area B2B leads with individual location data.`,
+      message: `Seeded ${count} leads with ${totalLocations} individual locations.`,
       count,
     });
   } catch (err) {
